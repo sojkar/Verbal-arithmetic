@@ -15,6 +15,7 @@
 #define SOLVER_H
 
 #include <minisat/core/Solver.h>
+#include <vector>
 
 using Words = std::vector<std::vector<int>>;
 using Characters = std::vector<char>;

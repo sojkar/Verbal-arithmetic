@@ -27,11 +27,11 @@ Solver::~Solver() {
 void Solver::setProblem(int chars, Words words){
   //TODO : check input
   this->chars = chars;
-  digits = 2;
+  digits = 10;
   orders = std::max(words[0].size(),words[1].size());
   createVars();
-  addAdditionRules(words);
-  //oneCharOneDigit();
+  oneCharOneDigit();
+  addAdditionRules(words);  
 }
 
 void Solver::addAdditionRules(Words words){
@@ -47,9 +47,7 @@ void Solver::addAdditionRules(Words words){
         Minisat::vec<Minisat::Lit> literals01;
         Minisat::vec<Minisat::Lit> literals10;
         Minisat::vec<Minisat::Lit> literals11;
-        
-        std::cout << "indexes: " << charValueToVar(c1,v1) << " " << charValueToVar(c2,v2) << " ";
-        
+
         literals00.push(Minisat::mkLit(charValueToVar(c1,v1),true));
         literals00.push(Minisat::mkLit(charValueToVar(c2,v2),true));
         literals01.push(Minisat::mkLit(charValueToVar(c1,v1),true));
@@ -63,15 +61,16 @@ void Solver::addAdditionRules(Words words){
         if(o > 0){
           literals00.push(Minisat::mkLit(tensToVar(o-1)));
           literals01.push(Minisat::mkLit(tensToVar(o-1)));
+          
+          literals10.push(Minisat::mkLit(tensToVar(o-1),true));
+          literals11.push(Minisat::mkLit(tensToVar(o-1),true));
         }
         
         if(v1 + v2 < digits){
           literals00.push(Minisat::mkLit(charValueToVar(c3,v1 + v2)));
-           std::cout << charValueToVar(c3,v1+v2) << std::endl; 
           literals01.push(Minisat::mkLit(tensToVar(o),true));
         }else{
           literals00.push(Minisat::mkLit(charValueToVar(c3,(v1 + v2) - digits)));
-          std::cout << charValueToVar(c3,(v1+v2)-digits) << std::endl;
           literals01.push(Minisat::mkLit(tensToVar(o)));
         }
         
@@ -83,9 +82,12 @@ void Solver::addAdditionRules(Words words){
           literals11.push(Minisat::mkLit(tensToVar(o)));
         }
         solver.addClause(literals00);
-        //solver.addClause(literals01);
-        //solver.addClause(literals10);
-        //solver.addClause(literals11);
+        solver.addClause(literals01);
+        
+        if(o > 0){
+            solver.addClause(literals10);
+            solver.addClause(literals11);
+        }
       }
     }
   }
@@ -111,7 +113,6 @@ void Solver::exactlyOne(Minisat::vec<Minisat::Lit> &literals) {
 }
 
 bool Solver::solve(){
-  solver.toDimacs("/home/radim/aa");
   solver.solve();
 } 
 
