@@ -39,11 +39,12 @@ private:
   void addAdditionRules(Words words);
   void oneCharOneDigit();
   void exactlyOne(Minisat::vec<Minisat::Lit> &literals);
+  void notZeroRule();
   
   int chars;
   int digits;
   int orders;
-  
+  std::vector<int> notZero; 
   //Words words;
   //int chars;
   

@@ -27,20 +27,36 @@ Solver::~Solver() {
 void Solver::setProblem(int chars, Words words){
   //TODO : check input
   this->chars = chars;
-  digits = 10;
-  orders = std::max(words[0].size(),words[1].size());
+  digits = 2;
+  if(words[1].size() > words[0].size()){
+    std::swap(words[0], words[1]);
+  }
+  orders = words[0].size();
   createVars();
   oneCharOneDigit();
-  addAdditionRules(words);  
+  addAdditionRules(words);
+  
+  notZero = {words[0].back(),words[1].back()};
+  notZeroRule();
+}
+
+void Solver::notZeroRule(){
+  for(auto c : notZero){
+    solver.addClause(Minisat::mkLit(charValueToVar(c,0),true));
+  }
 }
 
 void Solver::addAdditionRules(Words words){
   
   //TODO - support for different sizes of words
   for(int o = 0; o < orders; o++){
-    auto c1 = words[0][o];
-    auto c2 = words[1][o];
-    auto c3 = words[2][o];
+    int c1 = words[0][o];
+    int c2 = -1;  
+    if(o < words[1].size()){
+      c2 = words[1][o];
+    } 
+    int c3 = words[2][o];
+    
     for(int v1 = 0; v1 < digits; v1++){
       for(int v2 = 0; v2 < digits; v2++){
         Minisat::vec<Minisat::Lit> literals00; // dr-1 = 0 & dr = 0
@@ -49,14 +65,17 @@ void Solver::addAdditionRules(Words words){
         Minisat::vec<Minisat::Lit> literals11;
 
         literals00.push(Minisat::mkLit(charValueToVar(c1,v1),true));
-        literals00.push(Minisat::mkLit(charValueToVar(c2,v2),true));
         literals01.push(Minisat::mkLit(charValueToVar(c1,v1),true));
-        literals01.push(Minisat::mkLit(charValueToVar(c2,v2),true));
-        
         literals10.push(Minisat::mkLit(charValueToVar(c1,v1),true));
-        literals10.push(Minisat::mkLit(charValueToVar(c2,v2),true));
         literals11.push(Minisat::mkLit(charValueToVar(c1,v1),true));
-        literals11.push(Minisat::mkLit(charValueToVar(c2,v2),true));
+        
+        
+        if(c2 > -1){
+          literals00.push(Minisat::mkLit(charValueToVar(c2,v2),true));
+          literals01.push(Minisat::mkLit(charValueToVar(c2,v2),true));
+          literals10.push(Minisat::mkLit(charValueToVar(c2,v2),true));
+          literals11.push(Minisat::mkLit(charValueToVar(c2,v2),true));
+        }
         
         if(o > 0){
           literals00.push(Minisat::mkLit(tensToVar(o-1)));
@@ -88,8 +107,19 @@ void Solver::addAdditionRules(Words words){
             solver.addClause(literals10);
             solver.addClause(literals11);
         }
-      }
+      
+        if(c2 == -1){
+          break;
+        }
+      }      
     }
+  }
+
+  if(words[2].size() == orders){
+    solver.addClause(Minisat::mkLit(tensToVar(orders-1),true));
+  }else{
+    solver.addClause(Minisat::mkLit(tensToVar(orders-1),true),Minisat::mkLit(charValueToVar(words[2][orders],1)));
+    solver.addClause(Minisat::mkLit(tensToVar(orders-1)),Minisat::mkLit(charValueToVar(words[2][orders],0)));
   }
 }
 
